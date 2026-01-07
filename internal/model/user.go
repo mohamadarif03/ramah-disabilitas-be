@@ -7,8 +7,9 @@ import (
 type UserRole string
 
 const (
-	RoleStudent UserRole = "student"
-	RoleAdmin   UserRole = "admin"
+	RoleStudent  UserRole = "student"
+	RoleLecturer UserRole = "lecturer"
+	RoleAdmin    UserRole = "admin"
 )
 
 type RankTier string

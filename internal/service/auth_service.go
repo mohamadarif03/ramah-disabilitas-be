@@ -12,6 +12,7 @@ type RegisterInput struct {
 	Email           string `json:"email" binding:"required,email"`
 	Password        string `json:"password" binding:"required,min=6"`
 	ConfirmPassword string `json:"confirm_password" binding:"required,eqfield=Password"`
+	Role            string `json:"role" binding:"required"` // "student" or "lecturer" ("mahasiswa" or "dosen" also accepted)
 }
 
 type LoginInput struct {
@@ -25,11 +26,21 @@ func Register(input RegisterInput) (*model.User, error) {
 		return nil, err
 	}
 
+	var userRole model.UserRole
+	switch input.Role {
+	case "dosen", "lecturer":
+		userRole = model.RoleLecturer
+	case "mahasiswa", "student":
+		userRole = model.RoleStudent
+	default:
+		return nil, errors.New("role tidak valid (pilih 'dosen' atau 'mahasiswa')")
+	}
+
 	user := &model.User{
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: hashedPassword,
-		Role:     model.RoleStudent,
+		Role:     userRole,
 		RankTier: model.RankBronze,
 	}
 

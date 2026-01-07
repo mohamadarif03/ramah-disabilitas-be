@@ -38,6 +38,9 @@ func SetupRouter() *gin.Engine {
 					c.JSON(200, gin.H{"status": "ok", "role": "admin"})
 				})
 			}
+
+			// User Settings
+			protected.POST("/user/accessibility", handler.UpdateAccessibility)
 		}
 	}
 

@@ -43,6 +43,7 @@ func Migrate() {
 		&model.MatchDetail{},
 		&model.PracticeSession{},
 		&model.QuestionReport{},
+		&model.AccessibilityProfile{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
