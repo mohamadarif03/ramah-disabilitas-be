@@ -12,7 +12,7 @@ type RegisterInput struct {
 	Email           string `json:"email" binding:"required,email"`
 	Password        string `json:"password" binding:"required,min=6"`
 	ConfirmPassword string `json:"confirm_password" binding:"required,eqfield=Password"`
-	Role            string `json:"role" binding:"required"` // "student" or "lecturer" ("mahasiswa" or "dosen" also accepted)
+	Role            string `json:"role" binding:"required"`
 }
 
 type LoginInput struct {

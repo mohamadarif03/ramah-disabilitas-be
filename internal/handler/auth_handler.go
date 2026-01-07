@@ -11,7 +11,11 @@ import (
 func Register(c *gin.Context) {
 	var input service.RegisterInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": utils.FormatValidationError(err)})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Validasi input gagal.",
+			"errors":  utils.FormatValidationError(err),
+		})
 		return
 	}
 
@@ -36,7 +40,11 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	var input service.LoginInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": utils.FormatValidationError(err)})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Validasi input gagal.",
+			"errors":  utils.FormatValidationError(err),
+		})
 		return
 	}
 

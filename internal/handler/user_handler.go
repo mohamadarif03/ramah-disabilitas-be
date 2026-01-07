@@ -17,7 +17,11 @@ func UpdateAccessibility(c *gin.Context) {
 
 	var input service.AccessibilityInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": utils.FormatValidationError(err)})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Validasi input gagal.",
+			"errors":  utils.FormatValidationError(err),
+		})
 		return
 	}
 

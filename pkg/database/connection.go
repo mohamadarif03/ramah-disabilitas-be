@@ -36,14 +36,19 @@ func Migrate() {
 	err := DB.AutoMigrate(
 		&model.User{},
 		&model.Friendship{},
+		&model.Course{},
+		&model.Module{},
 		&model.Subtest{},
 		&model.Material{},
+		&model.SmartFeature{},
 		&model.Question{},
 		&model.Match{},
 		&model.MatchDetail{},
 		&model.PracticeSession{},
 		&model.QuestionReport{},
 		&model.AccessibilityProfile{},
+		&model.Assignment{},
+		&model.Submission{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)

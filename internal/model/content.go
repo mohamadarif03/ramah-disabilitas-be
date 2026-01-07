@@ -1,22 +1,10 @@
 package model
 
-import "time"
-
 type Subtest struct {
 	ID   uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name string `gorm:"type:varchar(100)" json:"name"`
 	Slug string `gorm:"type:varchar(100);unique" json:"slug"`
 	Icon string `gorm:"type:varchar(255)" json:"icon"`
-}
-
-type Material struct {
-	ID        uint64    `gorm:"primaryKey;autoIncrement" json:"id"`
-	SubtestID uint64    `json:"subtest_id"`
-	Title     string    `gorm:"type:varchar(255)" json:"title"`
-	Content   string    `gorm:"type:text" json:"content"`
-	VideoURL  string    `gorm:"type:varchar(255)" json:"video_url"`
-	CreatedAt time.Time `json:"created_at"`
-	Subtest   Subtest   `gorm:"foreignKey:SubtestID" json:"subtest"`
 }
 
 type QuestionCorrectAnswer string

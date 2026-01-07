@@ -4,14 +4,12 @@ type AccessibilityProfile struct {
 	UserID uint64 `gorm:"primaryKey" json:"user_id"`
 	User   User   `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 
-	// User Conditions ( Needs )
 	VisionImpaired    bool `json:"vision_impaired"`
 	HearingImpaired   bool `json:"hearing_impaired"`
 	PhysicalImpaired  bool `json:"physical_impaired"`
 	CognitiveImpaired bool `json:"cognitive_impaired"`
 	SpeechImpaired    bool `json:"speech_impaired"`
 
-	// System Features ( Actions )
 	ScreenReaderCompatible bool `json:"screen_reader_compatible"`
 	AudioDescription       bool `json:"audio_description"`
 	SubtitlesRequired      bool `json:"subtitles_required"`

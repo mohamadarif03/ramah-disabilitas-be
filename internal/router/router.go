@@ -30,7 +30,6 @@ func SetupRouter() *gin.Engine {
 		{
 			protected.GET("/auth/me", handler.GetMe)
 
-			// Admin routes
 			admin := protected.Group("/admin")
 			admin.Use(middleware.AdminMiddleware())
 			{
@@ -39,8 +38,17 @@ func SetupRouter() *gin.Engine {
 				})
 			}
 
-			// User Settings
 			protected.POST("/user/accessibility", handler.UpdateAccessibility)
+
+			// Lecturer Routes
+			lecturer := protected.Group("/lecturer")
+			lecturer.Use(middleware.LecturerMiddleware())
+			{
+				lecturer.POST("/courses", handler.CreateCourse)
+				lecturer.GET("/courses", handler.GetMyCourses)
+				lecturer.PUT("/courses/:id", handler.UpdateCourse)
+				lecturer.DELETE("/courses/:id", handler.DeleteCourse)
+			}
 		}
 	}
 
