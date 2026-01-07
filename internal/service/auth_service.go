@@ -41,7 +41,6 @@ func Register(input RegisterInput) (*model.User, error) {
 		Email:    input.Email,
 		Password: hashedPassword,
 		Role:     userRole,
-		RankTier: model.RankBronze,
 	}
 
 	if err := repository.CreateUser(user); err != nil {

@@ -21,7 +21,6 @@ func SeedAdmin() {
 			Email:    "admin@testclash.com",
 			Password: hashedPassword,
 			Role:     model.RoleAdmin,
-			RankTier: model.RankDiamond,
 		}
 
 		if err := DB.Create(&admin).Error; err != nil {

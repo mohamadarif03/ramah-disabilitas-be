@@ -12,16 +12,6 @@ const (
 	RoleAdmin    UserRole = "admin"
 )
 
-type RankTier string
-
-const (
-	RankBronze   RankTier = "Bronze"
-	RankSilver   RankTier = "Silver"
-	RankGold     RankTier = "Gold"
-	RankPlatinum RankTier = "Platinum"
-	RankDiamond  RankTier = "Diamond"
-)
-
 type User struct {
 	ID               uint64    `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name             string    `gorm:"type:varchar(255)" json:"name"`
@@ -30,8 +20,6 @@ type User struct {
 	Role             UserRole  `gorm:"type:varchar(20)" json:"role"`
 	Avatar           string    `gorm:"type:varchar(255)" json:"avatar"`
 	Points           int       `gorm:"default:0" json:"points"`
-	RankTier         RankTier  `gorm:"type:varchar(20)" json:"rank_tier"`
-	MMR              int       `json:"mmr"`
 	CurrentStreak    int       `gorm:"default:0" json:"current_streak"`
 	LastActivityDate time.Time `gorm:"type:date" json:"last_activity_date"`
 	CreatedAt        time.Time `json:"created_at"`

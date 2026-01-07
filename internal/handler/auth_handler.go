@@ -28,11 +28,10 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Pengguna berhasil terdaftar",
 		"data": gin.H{
-			"id":        user.ID,
-			"name":      user.Name,
-			"email":     user.Email,
-			"role":      user.Role,
-			"rank_tier": user.RankTier,
+			"id":    user.ID,
+			"name":  user.Name,
+			"email": user.Email,
+			"role":  user.Role,
 		},
 	})
 }
@@ -58,12 +57,11 @@ func Login(c *gin.Context) {
 		"message": "Login berhasil",
 		"token":   token,
 		"user": gin.H{
-			"id":        user.ID,
-			"name":      user.Name,
-			"email":     user.Email,
-			"role":      user.Role,
-			"rank_tier": user.RankTier,
-			"avatar":    user.Avatar,
+			"id":     user.ID,
+			"name":   user.Name,
+			"email":  user.Email,
+			"role":   user.Role,
+			"avatar": user.Avatar,
 		},
 	})
 }
@@ -84,12 +82,11 @@ func GetMe(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User detail",
 		"data": gin.H{
-			"id":        user.ID,
-			"name":      user.Name,
-			"email":     user.Email,
-			"role":      user.Role,
-			"rank_tier": user.RankTier,
-			"avatar":    user.Avatar,
+			"id":     user.ID,
+			"name":   user.Name,
+			"email":  user.Email,
+			"role":   user.Role,
+			"avatar": user.Avatar,
 		},
 	})
 }
