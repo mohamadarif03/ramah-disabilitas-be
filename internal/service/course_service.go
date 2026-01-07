@@ -2,18 +2,25 @@ package service
 
 import (
 	"errors"
+	"math/rand"
 	"ramah-disabilitas-be/internal/model"
 	"ramah-disabilitas-be/internal/repository"
+	"time"
 )
 
 type CourseInput struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
-	Thumbnail   string `json:"thumbnail"`
-	ClassCode   string `json:"class_code" binding:"required,min=4,max=20"`
+	Thumbnail   string `json:"thumbnail"`  // Nullable/Optional by default in Go string if not sent
+	ClassCode   string `json:"class_code"` // Optional for auto-generate
 }
 
 func CreateCourse(input CourseInput, teacherID uint64) (*model.Course, error) {
+	// Auto-generate ClassCode if empty
+	if input.ClassCode == "" {
+		input.ClassCode = generateClassCode() // Helper function needed
+	}
+
 	course := &model.Course{
 		TeacherID:   teacherID,
 		Title:       input.Title,
@@ -69,4 +76,17 @@ func DeleteCourse(id uint64, teacherID uint64) error {
 	}
 
 	return repository.DeleteCourse(id)
+}
+
+func generateClassCode() string {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	length := 6
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[r.Intn(len(charset))]
+	}
+	return string(b)
 }

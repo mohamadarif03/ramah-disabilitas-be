@@ -33,25 +33,48 @@ func Connect() {
 }
 
 func Migrate() {
+	// Step 1: Users & Core
 	err := DB.AutoMigrate(
 		&model.User{},
 		&model.Friendship{},
+		&model.Subtest{},
+		&model.AccessibilityProfile{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate Step 1 (Users):", err)
+	}
+
+	// Step 2: Course & Modules (Parent Tables)
+	err = DB.AutoMigrate(
 		&model.Course{},
 		&model.Module{},
-		&model.Subtest{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate Step 2 (Courses):", err)
+	}
+
+	// Step 3: Materials & Core Content (Dependent Tables)
+	err = DB.AutoMigrate(
 		&model.Material{},
-		&model.SmartFeature{},
 		&model.Question{},
+		&model.Assignment{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate Step 3 (Materials):", err)
+	}
+
+	// Step 4: Interactions & Smart Features (Deeply Dependent)
+	err = DB.AutoMigrate(
+		&model.SmartFeature{},
 		&model.Match{},
 		&model.MatchDetail{},
 		&model.PracticeSession{},
 		&model.QuestionReport{},
-		&model.AccessibilityProfile{},
-		&model.Assignment{},
 		&model.Submission{},
 	)
 	if err != nil {
-		log.Fatal("Failed to migrate database:", err)
+		log.Fatal("Failed to migrate Step 4 (Features):", err)
 	}
-	log.Println("Database migration completed")
+
+	log.Println("Database migration completed successfully")
 }
