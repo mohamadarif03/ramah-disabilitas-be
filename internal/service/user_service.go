@@ -6,7 +6,6 @@ import (
 )
 
 type AccessibilityInput struct {
-	// A=Vision, B=Hearing, C=Physical, D=Cognitive, E=Speech
 	Categories []string `json:"categories" binding:"required"`
 }
 

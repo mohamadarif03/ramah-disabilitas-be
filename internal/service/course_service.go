@@ -11,14 +11,13 @@ import (
 type CourseInput struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
-	Thumbnail   string `json:"thumbnail"`  // Nullable/Optional by default in Go string if not sent
-	ClassCode   string `json:"class_code"` // Optional for auto-generate
+	Thumbnail   string `json:"thumbnail"`
+	ClassCode   string `json:"class_code"`
 }
 
 func CreateCourse(input CourseInput, teacherID uint64) (*model.Course, error) {
-	// Auto-generate ClassCode if empty
 	if input.ClassCode == "" {
-		input.ClassCode = generateClassCode() // Helper function needed
+		input.ClassCode = generateClassCode()
 	}
 
 	course := &model.Course{
@@ -53,7 +52,6 @@ func UpdateCourse(id uint64, input CourseInput, teacherID uint64) (*model.Course
 	course.Title = input.Title
 	course.Description = input.Description
 	course.Thumbnail = input.Thumbnail
-	// ClassCode biasanya tidak diubah sembarangan, tapi jika perlu:
 	if input.ClassCode != "" {
 		course.ClassCode = input.ClassCode
 	}

@@ -8,7 +8,6 @@ import (
 )
 
 func SaveAccessibilityProfile(profile *model.AccessibilityProfile) error {
-	// Upsert: On conflict (user_id), update everything
 	return database.DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "user_id"}},
 		UpdateAll: true,

@@ -18,9 +18,9 @@ type QuestionReport struct {
 	ID          uint64    `gorm:"primaryKey;autoIncrement" json:"id"`
 	QuestionID  uint64    `json:"question_id"`
 	UserID      uint64    `json:"user_id"`
-	ReportType  string    `gorm:"type:varchar(50)" json:"report_type"` // typo, ambiguity, wrong_answer, other
+	ReportType  string    `gorm:"type:varchar(50)" json:"report_type"`
 	Description string    `gorm:"type:text" json:"description"`
-	Status      string    `gorm:"type:varchar(20);default:'pending'" json:"status"` // pending, reviewed, resolved
+	Status      string    `gorm:"type:varchar(20);default:'pending'" json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 
 	Question Question `gorm:"foreignKey:QuestionID" json:"question"`

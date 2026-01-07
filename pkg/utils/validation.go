@@ -11,12 +11,10 @@ func FormatValidationError(err error) map[string]string {
 	errors := make(map[string]string)
 
 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
-		for _, e := range validationErrors { // Iterate over all errors
+		for _, e := range validationErrors {
 			field := e.Field()
-			// Basic Name Transformation (CamelCase -> snake_case somewhat)
 			fieldName := strings.ToLower(field)
 
-			// Custom overrides based on common fields
 			switch field {
 			case "ConfirmPassword":
 				fieldName = "confirm_password"
@@ -47,7 +45,6 @@ func FormatValidationError(err error) map[string]string {
 				field = "Kode Kelas"
 			}
 
-			// Custom message logic
 			var msg string
 			switch e.Tag() {
 			case "required":
@@ -69,7 +66,6 @@ func FormatValidationError(err error) map[string]string {
 		return errors
 	}
 
-	// Fallback if it's not a validation error
 	errors["general"] = err.Error()
 	return errors
 }

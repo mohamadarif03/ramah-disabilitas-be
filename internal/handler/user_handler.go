@@ -31,7 +31,6 @@ func UpdateAccessibility(c *gin.Context) {
 		return
 	}
 
-	// Prepare user-friendly response messages (Step 3 Confirmation)
 	var actions []string
 	if profile.AISummary {
 		actions = append(actions, "Materi akan otomatis diringkas (Mode Fokus)")

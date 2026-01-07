@@ -39,7 +39,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Claims biasanya berupa float64 saat di-unmarshal dari JSON
 		if userID, ok := claims["user_id"].(float64); ok {
 			c.Set("userID", uint64(userID))
 		}

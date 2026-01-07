@@ -43,8 +43,6 @@ func AddStudentToCourse(courseID, studentID uint64) error {
 
 func IsStudentInCourse(courseID, studentID uint64) (bool, error) {
 	var count int64
-	// Assumes standard naming convention course_students(course_id, user_id)
-	// If User struct name is User, foreign key is user_id.
 	err := database.DB.Table("course_students").Where("course_id = ? AND user_id = ?", courseID, studentID).Count(&count).Error
 	return count > 0, err
 }

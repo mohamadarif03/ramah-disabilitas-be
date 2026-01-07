@@ -33,8 +33,6 @@ func Connect() {
 }
 
 func Migrate() {
-	// Step 1: Users & Core
-	// Drop tables if needed (careful with this in production!)
 	DB.Migrator().DropTable(
 		&model.Submission{},
 		&model.QuestionReport{},
@@ -62,7 +60,6 @@ func Migrate() {
 		log.Fatal("Failed to migrate Step 1 (Users):", err)
 	}
 
-	// Step 2: Course & Modules (Parent Tables)
 	err = DB.AutoMigrate(
 		&model.Course{},
 		&model.Module{},
@@ -71,7 +68,6 @@ func Migrate() {
 		log.Fatal("Failed to migrate Step 2 (Courses):", err)
 	}
 
-	// Step 3: Materials & Core Content (Dependent Tables)
 	err = DB.AutoMigrate(
 		&model.Material{},
 		&model.Question{},
@@ -81,7 +77,6 @@ func Migrate() {
 		log.Fatal("Failed to migrate Step 3 (Materials):", err)
 	}
 
-	// Step 4: Interactions & Smart Features (Deeply Dependent)
 	err = DB.AutoMigrate(
 		&model.SmartFeature{},
 		&model.Match{},
