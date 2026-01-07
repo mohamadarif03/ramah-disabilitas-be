@@ -12,9 +12,7 @@ func SetupRouter() *gin.Engine {
 	r.Use(middleware.CORSMiddleware())
 
 	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Welcome to Clash BE API",
-		})
+		c.String(200, "Halo! Aplikasi Go berhasil jalan di Koyeb.")
 	})
 
 	api := r.Group("/api/v1")
@@ -40,6 +38,7 @@ func SetupRouter() *gin.Engine {
 
 			protected.POST("/user/accessibility", handler.UpdateAccessibility)
 			protected.POST("/courses/join", handler.JoinCourse)
+			protected.GET("/courses/joined", handler.GetMyJoinedCourses)
 
 			// Lecturer Routes
 			lecturer := protected.Group("/lecturer")

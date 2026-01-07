@@ -48,3 +48,12 @@ func IsStudentInCourse(courseID, studentID uint64) (bool, error) {
 	err := database.DB.Table("course_students").Where("course_id = ? AND user_id = ?", courseID, studentID).Count(&count).Error
 	return count > 0, err
 }
+
+func GetCoursesByStudentID(studentID uint64) ([]model.Course, error) {
+	var courses []model.Course
+	err := database.DB.Table("courses").
+		Joins("JOIN course_students ON courses.id = course_students.course_id").
+		Where("course_students.user_id = ?", studentID).
+		Find(&courses).Error
+	return courses, err
+}

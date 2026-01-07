@@ -160,3 +160,22 @@ func JoinCourse(c *gin.Context) {
 		"message": "Berhasil bergabung ke kelas",
 	})
 }
+
+func GetMyJoinedCourses(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	courses, err := service.GetStudentCourses(userID.(uint64))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Daftar kelas yang diikuti berhasil diambil",
+		"data":    courses,
+	})
+}

@@ -111,3 +111,7 @@ func JoinCourse(classCode string, studentID uint64) error {
 
 	return repository.AddStudentToCourse(course.ID, studentID)
 }
+
+func GetStudentCourses(studentID uint64) ([]model.Course, error) {
+	return repository.GetCoursesByStudentID(studentID)
+}
