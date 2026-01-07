@@ -125,3 +125,38 @@ func DeleteCourse(c *gin.Context) {
 		"message": "Kelas berhasil dihapus",
 	})
 }
+
+func JoinCourse(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var input struct {
+		ClassCode string `json:"class_code" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Validasi input gagal",
+			"errors":  utils.FormatValidationError(err),
+		})
+		return
+	}
+
+	err := service.JoinCourse(input.ClassCode, userID.(uint64))
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "kelas tidak ditemukan" || err.Error() == "anda sudah bergabung di kelas ini" || err.Error() == "anda adalah pengajar di kelas ini" {
+			status = http.StatusBadRequest
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Berhasil bergabung ke kelas",
+	})
+}

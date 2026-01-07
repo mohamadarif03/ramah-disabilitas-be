@@ -28,3 +28,23 @@ func UpdateCourse(course *model.Course) error {
 func DeleteCourse(id uint64) error {
 	return database.DB.Delete(&model.Course{}, id).Error
 }
+
+func GetCourseByClassCode(code string) (*model.Course, error) {
+	var course model.Course
+	err := database.DB.Where("class_code = ?", code).First(&course).Error
+	return &course, err
+}
+
+func AddStudentToCourse(courseID, studentID uint64) error {
+	course := model.Course{ID: courseID}
+	student := model.User{ID: studentID}
+	return database.DB.Model(&course).Association("Students").Append(&student)
+}
+
+func IsStudentInCourse(courseID, studentID uint64) (bool, error) {
+	var count int64
+	// Assumes standard naming convention course_students(course_id, user_id)
+	// If User struct name is User, foreign key is user_id.
+	err := database.DB.Table("course_students").Where("course_id = ? AND user_id = ?", courseID, studentID).Count(&count).Error
+	return count > 0, err
+}

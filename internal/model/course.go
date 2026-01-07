@@ -18,6 +18,7 @@ type Course struct {
 
 	Modules     []Module     `gorm:"foreignKey:CourseID" json:"modules,omitempty"`
 	Assignments []Assignment `gorm:"foreignKey:CourseID" json:"assignments,omitempty"`
+	Students    []User       `gorm:"many2many:course_students;" json:"students,omitempty"`
 }
 
 type Module struct {

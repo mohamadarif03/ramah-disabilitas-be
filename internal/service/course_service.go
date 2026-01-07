@@ -90,3 +90,24 @@ func generateClassCode() string {
 	}
 	return string(b)
 }
+
+func JoinCourse(classCode string, studentID uint64) error {
+	course, err := repository.GetCourseByClassCode(classCode)
+	if err != nil {
+		return errors.New("kelas tidak ditemukan")
+	}
+
+	exists, err := repository.IsStudentInCourse(course.ID, studentID)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("anda sudah bergabung di kelas ini")
+	}
+
+	if course.TeacherID == studentID {
+		return errors.New("anda adalah pengajar di kelas ini")
+	}
+
+	return repository.AddStudentToCourse(course.ID, studentID)
+}

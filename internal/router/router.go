@@ -39,6 +39,7 @@ func SetupRouter() *gin.Engine {
 			}
 
 			protected.POST("/user/accessibility", handler.UpdateAccessibility)
+			protected.POST("/courses/join", handler.JoinCourse)
 
 			// Lecturer Routes
 			lecturer := protected.Group("/lecturer")
