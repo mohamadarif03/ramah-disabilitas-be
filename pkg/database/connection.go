@@ -34,6 +34,24 @@ func Connect() {
 
 func Migrate() {
 	// Step 1: Users & Core
+	// Drop tables if needed (careful with this in production!)
+	DB.Migrator().DropTable(
+		&model.Submission{},
+		&model.QuestionReport{},
+		&model.PracticeSession{},
+		&model.MatchDetail{},
+		&model.Match{},
+		&model.SmartFeature{},
+		&model.Assignment{},
+		&model.Question{},
+		&model.Material{},
+		&model.Module{},
+		&model.Course{},
+		&model.AccessibilityProfile{},
+		&model.Subtest{},
+		&model.Friendship{},
+		&model.User{},
+	)
 	err := DB.AutoMigrate(
 		&model.User{},
 		&model.Friendship{},
