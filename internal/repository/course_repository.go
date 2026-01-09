@@ -33,7 +33,7 @@ func GetCoursesByTeacherID(teacherID uint64, search string, status string, sort 
 
 func GetCourseByID(id uint64) (*model.Course, error) {
 	var course model.Course
-	err := database.DB.First(&course, id).Error
+	err := database.DB.Preload("Modules.Materials").First(&course, id).Error
 	return &course, err
 }
 

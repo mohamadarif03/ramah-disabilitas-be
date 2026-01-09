@@ -83,6 +83,10 @@ func GetCoursesByTeacher(teacherID uint64, search string, status string, sort st
 	return repository.GetCoursesByTeacherID(teacherID, search, status, sort)
 }
 
+func GetCourseDetail(id uint64) (*model.Course, error) {
+	return repository.GetCourseByID(id)
+}
+
 func UpdateCourse(id uint64, input CourseInput, teacherID uint64) (*model.Course, error) {
 	course, err := repository.GetCourseByID(id)
 	if err != nil {
@@ -95,9 +99,14 @@ func UpdateCourse(id uint64, input CourseInput, teacherID uint64) (*model.Course
 
 	course.Title = input.Title
 	course.Description = input.Description
-	course.Thumbnail = input.Thumbnail
+	if input.Thumbnail != "" {
+		course.Thumbnail = input.Thumbnail
+	}
 	if input.ClassCode != "" {
 		course.ClassCode = input.ClassCode
+	}
+	if input.Status != "" {
+		course.Status = input.Status
 	}
 
 	if err := repository.UpdateCourse(course); err != nil {
