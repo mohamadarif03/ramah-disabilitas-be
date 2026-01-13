@@ -57,3 +57,60 @@ func UpdateAccessibility(c *gin.Context) {
 		},
 	})
 }
+
+func CreateStudentByLecturer(c *gin.Context) {
+	// Middleware assumed to check lecturer role
+	var input service.CreateStudentInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Validasi input gagal.",
+			"errors":  utils.FormatValidationError(err),
+		})
+		return
+	}
+
+	user, err := service.CreateStudent(input)
+	if err != nil {
+		status := http.StatusInternalServerError
+		// Simple duplicate check if needed, or rely on generic error
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Akun mahasiswa berhasil dibuat",
+		"data": gin.H{
+			"id":    user.ID,
+			"name":  user.Name,
+			"email": user.Email,
+			"role":  user.Role,
+		},
+	})
+}
+
+func ImportStudents(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File CSV wajib diunggah (key: 'file')"})
+		return
+	}
+
+	f, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuka file"})
+		return
+	}
+	defer f.Close()
+
+	users, err := service.ImportStudentsFromCSV(f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memproses CSV: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Import berhasil",
+		"count":   len(users),
+	})
+}

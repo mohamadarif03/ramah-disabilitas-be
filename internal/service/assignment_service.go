@@ -77,3 +77,53 @@ func GetAssignmentsByCourse(courseID uint64, teacherID uint64) ([]model.Assignme
 func GetStudentAssignments(studentID uint64, statusFilter string) ([]model.Assignment, error) {
 	return repository.GetAssignmentsByStudentID(studentID, statusFilter)
 }
+
+func GetStudentAssignmentsByCourse(courseID uint64, studentID uint64) ([]model.Assignment, error) {
+	// Verify student is enrolled
+	inCourse, err := repository.IsStudentInCourse(courseID, studentID)
+	if err != nil {
+		return nil, err
+	}
+	if !inCourse {
+		return nil, errors.New("unauthorized: anda belum bergabung di kelas ini")
+	}
+
+	return repository.GetAssignmentsByCourseID(courseID)
+}
+
+func GetAssignmentDetail(assignmentID, userID uint64) (*model.Assignment, error) {
+	assignment, err := repository.GetAssignmentByID(assignmentID)
+	if err != nil {
+		return nil, errors.New("tugas tidak ditemukan")
+	}
+
+	course, err := repository.GetCourseByID(assignment.CourseID)
+	if err != nil {
+		return nil, errors.New("kelas tidak ditemukan")
+	}
+
+	// Check permissions
+	isTeacher := course.TeacherID == userID
+	isStudent, err := repository.IsStudentInCourse(course.ID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isTeacher && !isStudent {
+		return nil, errors.New("unauthorized: anda tidak memiliki akses ke tugas ini")
+	}
+
+	// If Student, hide other submissions and set MySubmission
+	if !isTeacher {
+		for _, s := range assignment.Submissions {
+			if s.StudentID == userID {
+				mySub := s
+				assignment.MySubmission = &mySub
+				break
+			}
+		}
+		assignment.Submissions = nil // Clear list for student
+	}
+
+	return assignment, nil
+}

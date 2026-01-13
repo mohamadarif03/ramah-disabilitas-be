@@ -20,6 +20,8 @@ type Assignment struct {
 	AllowLate  bool `json:"allow_late"`
 
 	Submissions []Submission `gorm:"foreignKey:AssignmentID" json:"submissions,omitempty"`
+
+	MySubmission *Submission `gorm:"-" json:"my_submission,omitempty"`
 }
 
 type Submission struct {

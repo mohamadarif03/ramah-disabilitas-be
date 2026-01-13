@@ -41,3 +41,9 @@ func GetAssignmentsByStudentID(studentID uint64, statusFilter string) ([]model.A
 	err := query.Order("assignments.deadline ASC").Find(&assignments).Error
 	return assignments, err
 }
+
+func GetSubmissionByStudent(assignmentID, studentID uint64) (*model.Submission, error) {
+	var submission model.Submission
+	err := database.DB.Where("assignment_id = ? AND student_id = ?", assignmentID, studentID).First(&submission).Error
+	return &submission, err
+}
