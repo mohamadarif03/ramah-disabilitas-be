@@ -147,7 +147,111 @@ func GetCoursesByStudentID(studentID uint64) ([]model.Course, error) {
 		Joins("JOIN course_students ON courses.id = course_students.course_id").
 		Where("course_students.user_id = ?", studentID).
 		Find(&courses).Error
-	return courses, err
+
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range courses {
+		courses[i].Progress = calculateCourseProgress(courses[i].ID, studentID)
+	}
+
+	return courses, nil
+}
+
+func calculateCourseProgress(courseID, studentID uint64) float64 {
+	var totalMaterials int64
+	var completedMaterials int64
+	var totalAssignments int64
+	var submittedAssignments int64
+
+	// Count Materials
+	database.DB.Table("materials").
+		Joins("JOIN modules ON materials.module_id = modules.id").
+		Where("modules.course_id = ?", courseID).
+		Count(&totalMaterials)
+
+	// Count Assignments
+	database.DB.Model(&model.Assignment{}).Where("course_id = ?", courseID).Count(&totalAssignments)
+
+	totalItems := totalMaterials + totalAssignments
+	if totalItems == 0 {
+		return 0
+	}
+
+	// Count Completed Materials
+	database.DB.Table("material_completions").
+		Joins("JOIN materials ON material_completions.material_id = materials.id").
+		Joins("JOIN modules ON materials.module_id = modules.id").
+		Where("modules.course_id = ? AND material_completions.user_id = ? AND material_completions.completed = ?", courseID, studentID, true).
+		Count(&completedMaterials)
+
+	// Count Submitted Assignments
+	// Assuming submission implies completion for progress
+	database.DB.Table("submissions").
+		Joins("JOIN assignments ON submissions.assignment_id = assignments.id").
+		Where("assignments.course_id = ? AND submissions.student_id = ?", courseID, studentID).
+		Count(&submittedAssignments)
+
+	completedItems := completedMaterials + submittedAssignments
+
+	return (float64(completedItems) / float64(totalItems)) * 100
+}
+
+func ToggleMaterialCompletion(userID, materialID uint64) (bool, error) {
+	var completion model.MaterialCompletion
+	err := database.DB.Where("user_id = ? AND material_id = ?", userID, materialID).First(&completion).Error
+
+	if err == gorm.ErrRecordNotFound {
+		// Create as completed
+		newCompletion := model.MaterialCompletion{
+			UserID:     userID,
+			MaterialID: materialID,
+			Completed:  true,
+		}
+		if err := database.DB.Create(&newCompletion).Error; err != nil {
+			return false, err
+		}
+		return true, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	// Toggle
+	completion.Completed = !completion.Completed
+	if err := database.DB.Save(&completion).Error; err != nil {
+		return false, err
+	}
+
+	return completion.Completed, nil
+}
+
+func GetMaterialCompletionStatus(userID, materialID uint64) bool {
+	var count int64
+	database.DB.Model(&model.MaterialCompletion{}).
+		Where("user_id = ? AND material_id = ? AND completed = ?", userID, materialID, true).
+		Count(&count)
+	return count > 0
+}
+
+func GetCompletedMaterialsMap(courseID, studentID uint64) (map[uint64]bool, error) {
+	var completedMaterials []uint64
+	// Find all material IDs completed by this user in this course
+	err := database.DB.Table("material_completions").
+		Joins("JOIN materials ON material_completions.material_id = materials.id").
+		Joins("JOIN modules ON materials.module_id = modules.id").
+		Where("modules.course_id = ? AND material_completions.user_id = ? AND material_completions.completed = ?", courseID, studentID, true).
+		Pluck("material_completions.material_id", &completedMaterials).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[uint64]bool)
+	for _, id := range completedMaterials {
+		result[id] = true
+	}
+	return result, nil
 }
 
 func GetModuleByID(id uint64) (*model.Module, error) {
@@ -167,7 +271,7 @@ func DeleteModule(id uint64) error {
 
 func GetMaterialByID(id uint64) (*model.Material, error) {
 	var material model.Material
-	err := database.DB.First(&material, id).Error
+	err := database.DB.Preload("SmartFeature").First(&material, id).Error
 	return &material, err
 }
 

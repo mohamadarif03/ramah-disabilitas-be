@@ -74,6 +74,6 @@ func GetAssignmentsByCourse(courseID uint64, teacherID uint64) ([]model.Assignme
 	return repository.GetAssignmentsByCourseID(courseID)
 }
 
-func GetStudentAssignments(studentID uint64) ([]model.Assignment, error) {
-	return repository.GetAssignmentsByStudentID(studentID)
+func GetStudentAssignments(studentID uint64, statusFilter string) ([]model.Assignment, error) {
+	return repository.GetAssignmentsByStudentID(studentID, statusFilter)
 }

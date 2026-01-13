@@ -84,6 +84,7 @@ func Migrate() {
 		&model.PracticeSession{},
 		&model.QuestionReport{},
 		&model.Submission{},
+		&model.MaterialCompletion{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate Step 4 (Features):", err)

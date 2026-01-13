@@ -317,3 +317,82 @@ func UpdateMaterial(materialID uint64, input MaterialInput, teacherID uint64) (*
 
 	return material, nil
 }
+
+func ToggleMaterialCompletion(userID, materialID uint64) (bool, error) {
+	return repository.ToggleMaterialCompletion(userID, materialID)
+}
+
+func GetStudentCourseDetail(courseID, studentID uint64) (*model.Course, error) {
+	// 1. Check if student is enrolled
+	inCourse, err := repository.IsStudentInCourse(courseID, studentID)
+	if err != nil {
+		return nil, err
+	}
+	if !inCourse {
+		return nil, errors.New("unauthorized: anda belum bergabung di kelas ini")
+	}
+
+	// 2. Get Course Detail
+	course, err := repository.GetCourseByID(courseID)
+	if err != nil {
+		return nil, errors.New("kelas tidak ditemukan")
+	}
+
+	// 3. Get User's Completed Materials
+	completedMap, err := repository.GetCompletedMaterialsMap(courseID, studentID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 4. Map completion status
+	for i := range course.Modules {
+		for j := range course.Modules[i].Materials {
+			if completedMap[course.Modules[i].Materials[j].ID] {
+				course.Modules[i].Materials[j].IsCompleted = true
+			}
+		}
+	}
+
+	return course, nil
+}
+
+func GetMaterialDetailWithStatus(materialID, userID uint64) (*model.Material, error) {
+	material, err := repository.GetMaterialByID(materialID)
+	if err != nil {
+		return nil, errors.New("materi tidak ditemukan")
+	}
+
+	module, err := repository.GetModuleByID(material.ModuleID)
+	if err != nil {
+		return nil, errors.New("module not found")
+	}
+
+	// Verify enrollment (or ownership)
+	// If teacher is the same as userID?
+	// But usually this view is for students.
+	// For teachers, they can view it too?
+	// Let's assume Student context for now since "WithStatus" implies student progress.
+	// We check enrollment.
+	inCourse, err := repository.IsStudentInCourse(module.CourseID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// If not student, check if teacher
+	if !inCourse {
+		course, err := repository.GetCourseByID(module.CourseID)
+		if err == nil && course.TeacherID == userID {
+			// Is teacher, allowed. Status logic might be different or irrelevant (always false or true?)
+			// Let's just return material without IsCompleted (default false)
+			return material, nil
+		}
+		// Not teacher either
+		return nil, errors.New("unauthorized: anda tidak memiliki akses ke materi ini")
+	}
+
+	// Is Student, check completion
+	isCompleted := repository.GetMaterialCompletionStatus(userID, materialID)
+	material.IsCompleted = isCompleted
+
+	return material, nil
+}

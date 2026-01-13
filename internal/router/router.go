@@ -45,6 +45,9 @@ func SetupRouter() *gin.Engine {
 			protected.POST("/courses/join", handler.JoinCourse)
 			protected.GET("/courses/joined", handler.GetMyJoinedCourses)
 			protected.GET("/courses/assignments", handler.GetMyAssignments)
+			protected.GET("/courses/:id", handler.GetStudentCourseDetail)
+			protected.GET("/materials/:id", handler.GetMaterialDetail)
+			protected.POST("/materials/:id/complete", handler.ToggleMaterialCompletion)
 
 			lecturer := protected.Group("/lecturer")
 			lecturer.Use(middleware.LecturerMiddleware())

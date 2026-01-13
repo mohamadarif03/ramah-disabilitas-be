@@ -20,6 +20,7 @@ type Course struct {
 	Modules     []Module     `gorm:"foreignKey:CourseID" json:"modules,omitempty"`
 	Assignments []Assignment `gorm:"foreignKey:CourseID" json:"assignments,omitempty"`
 	Students    []User       `gorm:"many2many:course_students;" json:"students,omitempty"`
+	Progress    float64      `gorm:"-" json:"progress"` // 0-100 percentage
 }
 
 type Module struct {
@@ -50,6 +51,8 @@ type Material struct {
 
 	DurationMin int  `json:"duration_min"`
 	HasCaptions bool `json:"has_captions"`
+
+	IsCompleted bool `gorm:"-" json:"is_completed"`
 
 	SmartFeature *SmartFeature `gorm:"foreignKey:MaterialID" json:"smart_feature,omitempty"`
 }

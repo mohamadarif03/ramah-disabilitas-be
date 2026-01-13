@@ -98,7 +98,9 @@ func GetMyAssignments(c *gin.Context) {
 		return
 	}
 
-	assignments, err := service.GetStudentAssignments(userID.(uint64))
+	filter := c.Query("filter") // overdue, upcoming
+
+	assignments, err := service.GetStudentAssignments(userID.(uint64), filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
