@@ -103,8 +103,8 @@ func ImportStudentsFromCSV(reader io.Reader) ([]*model.User, error) {
 
 	// Skip header if it exists (assuming first row is header)
 	if len(records) > 0 {
-		// Simple check: if first field is "name" or "Name"
-		if records[0][0] == "name" || records[0][0] == "Name" {
+		firstCell := strings.ToLower(records[0][0])
+		if firstCell == "name" || firstCell == "nama" {
 			records = records[1:]
 		}
 	}
