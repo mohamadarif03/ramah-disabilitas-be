@@ -24,6 +24,7 @@ func SetupRouter() *gin.Engine {
 		{
 			auth.POST("/register", handler.Register)
 			auth.POST("/login", handler.Login)
+			auth.GET("/verify-email", handler.VerifyEmail)
 		}
 
 		protected := api.Group("/")

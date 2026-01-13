@@ -26,13 +26,30 @@ func Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Pengguna berhasil terdaftar",
+		"message": "Pendaftaran berhasil. Silahkan cek email anda untuk verifikasi.",
 		"data": gin.H{
 			"id":    user.ID,
 			"name":  user.Name,
 			"email": user.Email,
 			"role":  user.Role,
 		},
+	})
+}
+
+func VerifyEmail(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Token wajib ada"})
+		return
+	}
+
+	if err := service.VerifyEmail(token); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Email berhasil diverifikasi. Silahkan login.",
 	})
 }
 

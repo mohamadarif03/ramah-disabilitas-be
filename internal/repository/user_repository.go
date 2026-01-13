@@ -20,3 +20,13 @@ func FindUserByID(id uint64) (*model.User, error) {
 	err := database.DB.Preload("Accessibility").First(&user, id).Error
 	return &user, err
 }
+
+func FindUserByVerificationToken(token string) (*model.User, error) {
+	var user model.User
+	err := database.DB.Where("verification_token = ?", token).First(&user).Error
+	return &user, err
+}
+
+func UpdateUser(user *model.User) error {
+	return database.DB.Save(user).Error
+}
