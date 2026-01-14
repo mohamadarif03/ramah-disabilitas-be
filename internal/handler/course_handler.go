@@ -829,3 +829,123 @@ func SaveMaterialSummary(c *gin.Context) {
 		"data":    smartFeature,
 	})
 }
+
+func ChatWithMaterial(c *gin.Context) {
+	// 1. Auth Check
+	_, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// 2. Parse ID
+	materialIDStr := c.Param("id")
+	materialID, err := strconv.ParseUint(materialIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID materi tidak valid"})
+		return
+	}
+
+	// 3. Parse Request Body
+	var input struct {
+		Question string `json:"question" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Pertanyaan wajib diisi"})
+		return
+	}
+
+	// 4. Call Service
+	answer, err := service.ChatWithMaterial(materialID, input.Question)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "tidak ditemukan") {
+			status = http.StatusNotFound
+		} else if strings.Contains(err.Error(), "belum didukung") {
+			status = http.StatusBadRequest
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Berhasil mendapatkan jawaban AI",
+		"data": gin.H{
+			"answer": answer,
+		},
+	})
+}
+
+func GenerateQuizFromMaterial(c *gin.Context) {
+	// 1. Auth Check
+	_, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// 2. Parse ID
+	materialIDStr := c.Param("id")
+	materialID, err := strconv.ParseUint(materialIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID materi tidak valid"})
+		return
+	}
+
+	// 3. Parse Request Body (Optional Count)
+	var input struct {
+		Count int `json:"count"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		// If body is empty or invalid, default count is used in service
+	}
+
+	// 4. Call Service
+	questions, err := service.GenerateQuizFromMaterial(materialID, input.Count)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "tidak ditemukan") {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Berhasil membuat quiz",
+		"data":    questions,
+	})
+}
+
+func GenerateFlashcardsFromMaterial(c *gin.Context) {
+	// 1. Auth Check
+	_, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// 2. Parse ID
+	materialIDStr := c.Param("id")
+	materialID, err := strconv.ParseUint(materialIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID materi tidak valid"})
+		return
+	}
+
+	// 3. Call Service
+	cards, err := service.GenerateFlashcardsFromMaterial(materialID)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "tidak ditemukan") {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Berhasil membuat flashcards",
+		"data":    cards,
+	})
+}

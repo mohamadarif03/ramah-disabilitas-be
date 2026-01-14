@@ -2,12 +2,16 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"math/rand"
 	"ramah-disabilitas-be/internal/model"
 	"ramah-disabilitas-be/internal/repository"
 	"ramah-disabilitas-be/pkg/ai"
 	"ramah-disabilitas-be/pkg/utils"
+	"strings"
 	"time"
 )
 
@@ -35,6 +39,11 @@ type CourseInput struct {
 	ClassCode   string        `json:"class_code"`
 	Status      string        `json:"status"` // published, draft
 	Modules     []ModuleInput `json:"modules,omitempty"`
+}
+
+type Flashcard struct {
+	Front string `json:"front"`
+	Back  string `json:"back"`
 }
 
 func CreateCourse(input CourseInput, teacherID uint64) (*model.Course, error) {
@@ -440,28 +449,9 @@ func GenerateMaterialSummary(materialID uint64) (*model.SmartFeature, error) {
 		return material.SmartFeature, nil
 	}
 
-	var textContent string
-	if material.Type == model.TypePDF {
-		// Extract from source URL
-		// Ensure SourceURL is not empty
-		if material.SourceURL == "" {
-			return nil, errors.New("file PDF tidak ditemukan (URL kosong)")
-		}
-
-		extracted, err := utils.ExtractTextFromPDF(material.SourceURL)
-		if err != nil {
-			return nil, errors.New("gagal membaca PDF: " + err.Error())
-		}
-		if len(extracted) > 200000 {
-			// Truncate if too huge? Gemini Flash has 1M token context, so 200k chars is fine (~50k tokens).
-			// But let's be safe against abuse.
-			extracted = extracted[:200000]
-		}
-		textContent = extracted
-	} else if material.Type == model.TypeText {
-		textContent = material.RawContent
-	} else {
-		return nil, errors.New("tipe materi ini belum didukung untuk ringkasan otomatis")
+	textContent, err := getMaterialContent(material)
+	if err != nil {
+		return nil, err
 	}
 
 	if textContent == "" {
@@ -474,7 +464,7 @@ func GenerateMaterialSummary(materialID uint64) (*model.SmartFeature, error) {
 	defer cancel()
 
 	// Prompt refined for rich formatting
-	prompt := "Buatkan ringkasan yang komprehensif dari materi berikut. Gunakan format Markdown untuk struktur yang rapi: gunakan **bold** untuk istilah penting atau heading, list bullet points untuk rincian, dan _italic_ untuk penekanan. Pastikan ringkasan mudah dipahami oleh mahasiswa:\n\n" + textContent
+	prompt := "Jelaskan ulang materi berikut secara komprehensif, detail, dan mendalam agar mudah dipahami mahasiswa. Gunakan format Markdown yang rapi: gunakan heading, **bold** untuk istilah penting, dan list bullet points. SANGAT PENTING: Jangan gunakan kalimat pembuka atau pengantar basa-basi (seperti 'Tentu', 'Berikut adalah ringkasan', dll). Langsung berikan penjelasan intinya:\n\n" + textContent
 	summary, err := ai.GenerateContent(ctx, prompt)
 	if err != nil {
 		return nil, errors.New("gagal menghasilkan ringkasan AI: " + err.Error())
@@ -509,4 +499,190 @@ func SaveMaterialSummary(materialID uint64, summary string) (*model.SmartFeature
 	}
 
 	return smartFeature, nil
+}
+
+func ChatWithMaterial(materialID uint64, question string) (string, error) {
+	material, err := repository.GetMaterialByID(materialID)
+	if err != nil {
+		return "", errors.New("materi tidak ditemukan")
+	}
+
+	textContent, err := getMaterialContent(material)
+	if err != nil {
+		return "", err
+	}
+
+	if textContent == "" {
+		return "", errors.New("konten materi kosong")
+	}
+
+	// Call AI
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	prompt := "Anda adalah asisten AI yang membantu mahasiswa memahami materi pembelajaran.\n\n" +
+		"[KONTEN MATERI]\n" + textContent + "\n\n" +
+		"[PERTANYAAN USER]\n" + question + "\n\n" +
+		"INSTRUKSI:\n" +
+		"1. Jawab pertanyaan user berdasarkan materi di atas.\n" +
+		"2. JIKA jawaban TIDAK ditemukan dalam materi atau pertanyaan menyimpang, carikan jawaban dari pengetahuan umum Anda, NAMUN Anda WAJIB mengawali jawaban dengan kalimat persis ini: 'Pertanyaan ini tidak relevan dengan materi, namun berikut informasinya:'\n" +
+		"3. Berikan jawaban yang jelas, ramah, dan edukatif.\n"
+
+	return ai.GenerateContent(ctx, prompt)
+}
+
+func getMaterialContent(material *model.Material) (string, error) {
+	if material.Type == model.TypePDF {
+		// Extract from source URL
+		if material.SourceURL == "" {
+			return "", errors.New("file PDF tidak ditemukan (URL kosong)")
+		}
+
+		extracted, err := utils.ExtractTextFromPDF(material.SourceURL)
+		if err != nil {
+			return "", errors.New("gagal membaca PDF: " + err.Error())
+		}
+		if len(extracted) > 200000 {
+			extracted = extracted[:200000]
+		}
+		return extracted, nil
+	} else if material.Type == model.TypeText {
+		return material.RawContent, nil
+	}
+	return "", errors.New("tipe materi ini belum didukung untuk fitur AI")
+}
+
+func GenerateQuizFromMaterial(materialID uint64, count int) ([]model.Question, error) {
+	if count <= 0 {
+		count = 5 // Default
+	}
+	if count > 20 {
+		count = 20 // Limit
+	}
+
+	material, err := repository.GetMaterialByID(materialID)
+	if err != nil {
+		return nil, errors.New("materi tidak ditemukan")
+	}
+
+	textContent, err := getMaterialContent(material)
+	if err != nil {
+		return nil, err
+	}
+
+	if textContent == "" {
+		return nil, errors.New("konten materi kosong")
+	}
+
+	// Call AI
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second) // Longer timeout for quiz generation
+	defer cancel()
+
+	prompt := fmt.Sprintf(`Buatkan %d soal pilihan ganda (quiz) yang relevan dan menantang berdasarkan materi berikut.
+Output WAJIB berupa JSON Array murni tanpa format Markdown (jangan pakai `+"```json"+` atau sejenisnya).
+Struktur JSON untuk setiap soal harus persis seperti ini:
+[
+  {
+    "question_text": "Pertanyaan...",
+    "option_a": "Pilihan A",
+    "option_b": "Pilihan B",
+    "option_c": "Pilihan C",
+    "option_d": "Pilihan D",
+    "option_e": "Pilihan E",
+    "correct_answer": "a", // "a", "b", "c", "d", atau "e"
+    "explanation": "Penjelasan jawaban benar...",
+    "difficulty": "medium" // "easy", "medium", atau "hard"
+  }
+]
+
+MATERI:
+%s`, count, textContent)
+
+	jsonStr, err := ai.GenerateContent(ctx, prompt)
+	if err != nil {
+		return nil, errors.New("gagal menghasilkan quiz dari AI: " + err.Error())
+	}
+
+	// Clean up markdown if AI adds it despite instructions
+	jsonStr = strings.TrimPrefix(jsonStr, "```json")
+	jsonStr = strings.TrimPrefix(jsonStr, "```")
+	jsonStr = strings.TrimSuffix(jsonStr, "```")
+	jsonStr = strings.TrimSpace(jsonStr)
+
+	var questions []model.Question
+	if err := json.Unmarshal([]byte(jsonStr), &questions); err != nil {
+		log.Println("AI Quiz JSON Error:", jsonStr)
+		// Fallback clean (sometimes there is text before json)
+		start := strings.Index(jsonStr, "[")
+		end := strings.LastIndex(jsonStr, "]")
+		if start != -1 && end != -1 {
+			jsonStr = jsonStr[start : end+1]
+			if err2 := json.Unmarshal([]byte(jsonStr), &questions); err2 != nil {
+				return nil, errors.New("gagal memproses respon AI (format JSON tidak valid)")
+			}
+		} else {
+			return nil, errors.New("gagal memproses respon AI (format JSON tidak valid)")
+		}
+	}
+
+	return questions, nil
+}
+
+func GenerateFlashcardsFromMaterial(materialID uint64) ([]Flashcard, error) {
+	material, err := repository.GetMaterialByID(materialID)
+	if err != nil {
+		return nil, errors.New("materi tidak ditemukan")
+	}
+
+	textContent, err := getMaterialContent(material)
+	if err != nil {
+		return nil, err
+	}
+
+	if textContent == "" {
+		return nil, errors.New("konten materi kosong")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+
+	prompt := fmt.Sprintf(`Buatkan daftar Flashcard (Kartu Kilat) dari materi berikut untuk membantu belajar. Jumlah kartu SESUAIKAN dengan banyaknya konsep penting dalam materi (jangan terlalu sedikit, jangan terlalu banyak yang tidak penting).
+Output WAJIB berupa JSON Array murni tanpa format Markdown.
+Struktur JSON:
+[
+  {
+    "front": "Pertanyaan atau Istilah (Sisi Depan)",
+    "back": "Jawaban atau Definisi (Sisi Belakang)"
+  }
+]
+
+MATERI:
+%s`, textContent)
+
+	jsonStr, err := ai.GenerateContent(ctx, prompt)
+	if err != nil {
+		return nil, errors.New("gagal menghasilkan flashcard dari AI: " + err.Error())
+	}
+
+	jsonStr = strings.TrimPrefix(jsonStr, "```json")
+	jsonStr = strings.TrimPrefix(jsonStr, "```")
+	jsonStr = strings.TrimSuffix(jsonStr, "```")
+	jsonStr = strings.TrimSpace(jsonStr)
+
+	var cards []Flashcard
+	if err := json.Unmarshal([]byte(jsonStr), &cards); err != nil {
+		log.Println("AI Flashcard JSON Error:", jsonStr)
+		start := strings.Index(jsonStr, "[")
+		end := strings.LastIndex(jsonStr, "]")
+		if start != -1 && end != -1 {
+			jsonStr = jsonStr[start : end+1]
+			if err2 := json.Unmarshal([]byte(jsonStr), &cards); err2 != nil {
+				return nil, errors.New("gagal memproses respon AI (format JSON tidak valid)")
+			}
+		} else {
+			return nil, errors.New("gagal memproses respon AI (format JSON tidak valid)")
+		}
+	}
+
+	return cards, nil
 }

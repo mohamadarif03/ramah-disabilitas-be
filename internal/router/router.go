@@ -53,6 +53,9 @@ func SetupRouter() *gin.Engine {
 			protected.POST("/materials/:id/complete", handler.ToggleMaterialCompletion)
 			protected.POST("/materials/:id/summary", handler.GenerateMaterialSummary)
 			protected.POST("/materials/:id/summary/save", handler.SaveMaterialSummary)
+			protected.POST("/materials/:id/chat", handler.ChatWithMaterial)
+			protected.POST("/materials/:id/quiz", handler.GenerateQuizFromMaterial)
+			protected.POST("/materials/:id/flashcards", handler.GenerateFlashcardsFromMaterial)
 
 			lecturer := protected.Group("/lecturer")
 			lecturer.Use(middleware.LecturerMiddleware())
