@@ -13,6 +13,8 @@ import (
 	"ramah-disabilitas-be/pkg/utils"
 	"strings"
 	"time"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type MaterialInput struct {
@@ -685,4 +687,96 @@ MATERI:
 	}
 
 	return cards, nil
+}
+
+func ImportStudentsToCourseFromExcel(courseID uint64, teacherID uint64, filePath string) (map[string]interface{}, error) {
+	// 1. Verify Course Ownership
+	course, err := repository.GetCourseByID(courseID)
+	if err != nil {
+		return nil, errors.New("kelas tidak ditemukan")
+	}
+	if course.TeacherID != teacherID {
+		return nil, errors.New("unauthorized: anda tidak memiliki akses ke kelas ini")
+	}
+
+	// 2. Open Excel
+	f, err := excelize.OpenFile(filePath)
+	if err != nil {
+		return nil, errors.New("gagal membuka file excel: " + err.Error())
+	}
+	defer f.Close()
+
+	// 3. Get all rows in the first sheet
+	sheetName := f.GetSheetName(0)
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		return nil, errors.New("gagal membaca baris excel: " + err.Error())
+	}
+
+	successCount := 0
+	failCount := 0
+	var errorsList []string
+
+	// 4. Iterate Rows (Skip header)
+	for i, row := range rows {
+		if i == 0 {
+			continue // Skip Header
+		}
+		if len(row) < 2 {
+			continue // Skip row with insufficient columns
+		}
+
+		name := row[0]
+		email := row[1]
+		password := "student123" // Default password
+		if len(row) > 2 && row[2] != "" {
+			password = row[2]
+		}
+
+		// Optional: Disabilities (col 3)
+		var disabilities []string
+		if len(row) > 3 && row[3] != "" {
+			disabilities = strings.Split(row[3], ";")
+			for i := range disabilities {
+				disabilities[i] = strings.TrimSpace(disabilities[i])
+			}
+		}
+
+		// Check if user exists
+		user, err := repository.FindUserByEmail(email)
+		if err != nil {
+			// User likely not found, create new
+			input := CreateStudentInput{
+				Name:       name,
+				Email:      email,
+				Password:   password,
+				Categories: disabilities,
+			}
+			newUser, errCreate := CreateStudent(input)
+			if errCreate != nil {
+				failCount++
+				errorsList = append(errorsList, fmt.Sprintf("Row %d (%s): Gagal buat user: %v", i+1, email, errCreate))
+				continue
+			}
+			user = newUser
+		}
+
+		// Enroll User
+		if err := repository.AddStudentToCourse(courseID, user.ID); err != nil {
+			// Ignore if already enrolled (depends on behavior of AddStudentToCourse implementation)
+			// Assuming AddStudentToCourse handles idempotency or we accept error
+			// If it returns error for duplicates, we should check string.
+			// But for now, log error.
+			failCount++
+			errorsList = append(errorsList, fmt.Sprintf("Row %d (%s): Gagal enroll: %v", i+1, email, err))
+			continue
+		}
+		successCount++
+	}
+
+	return map[string]interface{}{
+		"success_count": successCount,
+		"fail_count":    failCount,
+		"errors":        errorsList,
+	}, nil
 }
