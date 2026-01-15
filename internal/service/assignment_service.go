@@ -127,3 +127,47 @@ func GetAssignmentDetail(assignmentID, userID uint64) (*model.Assignment, error)
 
 	return assignment, nil
 }
+
+type GradeInput struct {
+	Grade    float64 `json:"grade"` // Remove binding required as 0 is valid. Use explicit validation if needed. But binding:"required" fails on 0 for some validators? No, usually valid. But let's be safe.
+	Feedback string  `json:"feedback"`
+}
+
+func GradeSubmission(submissionID uint64, input GradeInput, teacherID uint64) (*model.Submission, error) {
+	// 1. Get Submission
+	submission, err := repository.GetSubmissionByID(submissionID)
+	if err != nil {
+		return nil, errors.New("submission tidak ditemukan")
+	}
+
+	// 2. Get Assignment & Course to verify ownership
+	assignment, err := repository.GetAssignmentByID(submission.AssignmentID)
+	if err != nil {
+		return nil, errors.New("assignment not found")
+	}
+
+	course, err := repository.GetCourseByID(assignment.CourseID)
+	if err != nil {
+		return nil, errors.New("course not found")
+	}
+
+	if course.TeacherID != teacherID {
+		return nil, errors.New("unauthorized: anda tidak memiliki akses ke kelas ini")
+	}
+
+	// 3. Update Grade
+	// Validate Grade vs MaxPoints
+	if input.Grade < 0 || input.Grade > float64(assignment.MaxPoints) {
+		// Just simplified error message
+		return nil, errors.New("nilai tidak valid (melebihi batas maksimal)")
+	}
+
+	submission.Grade = input.Grade
+	submission.Feedback = input.Feedback
+
+	if err := repository.UpdateSubmission(submission); err != nil {
+		return nil, err
+	}
+
+	return submission, nil
+}

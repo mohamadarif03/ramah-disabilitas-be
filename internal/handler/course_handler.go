@@ -972,3 +972,79 @@ func ImportStudentsToCourse(c *gin.Context) {
 		"data":    result,
 	})
 }
+
+func GetCourseStudents(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	courseIDStr := c.Param("id")
+	courseID, err := strconv.ParseUint(courseIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID kelas tidak valid"})
+		return
+	}
+
+	students, err := service.GetCourseStudents(courseID, userID.(uint64))
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "unauthorized") {
+			status = http.StatusForbidden
+		} else if strings.Contains(err.Error(), "tidak ditemukan") {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Daftar siswa berhasil diambil",
+		"data":    students,
+	})
+}
+
+func GradeSubmission(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	submissionIDStr := c.Param("id")
+	submissionID, err := strconv.ParseUint(submissionIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID submission tidak valid"})
+		return
+	}
+
+	var input service.GradeInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Validasi input gagal.",
+			"errors":  utils.FormatValidationError(err),
+		})
+		return
+	}
+
+	submission, err := service.GradeSubmission(submissionID, input, userID.(uint64))
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "unauthorized") {
+			status = http.StatusForbidden
+		} else if strings.Contains(err.Error(), "tidak ditemukan") || strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		} else if strings.Contains(err.Error(), "tidak valid") {
+			status = http.StatusBadRequest
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Penilaian berhasil disimpan",
+		"data":    submission,
+	})
+}

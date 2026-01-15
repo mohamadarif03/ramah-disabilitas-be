@@ -47,3 +47,13 @@ func GetSubmissionByStudent(assignmentID, studentID uint64) (*model.Submission, 
 	err := database.DB.Where("assignment_id = ? AND student_id = ?", assignmentID, studentID).First(&submission).Error
 	return &submission, err
 }
+
+func UpdateSubmission(submission *model.Submission) error {
+	return database.DB.Save(submission).Error
+}
+
+func GetSubmissionByID(id uint64) (*model.Submission, error) {
+	var submission model.Submission
+	err := database.DB.Preload("Student").First(&submission, id).Error
+	return &submission, err
+}

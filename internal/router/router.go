@@ -60,10 +60,12 @@ func SetupRouter() *gin.Engine {
 			lecturer := protected.Group("/lecturer")
 			lecturer.Use(middleware.LecturerMiddleware())
 			{
+				lecturer.GET("/dashboard", handler.GetLecturerDashboardStats)
 				lecturer.POST("/students", handler.CreateStudentByLecturer)
 				lecturer.POST("/students/import", handler.ImportStudents)
 				lecturer.POST("/courses", handler.CreateCourse)
 				lecturer.POST("/courses/:id/students", handler.CreateStudentAndEnroll)
+				lecturer.GET("/courses/:id/students", handler.GetCourseStudents)
 				lecturer.POST("/courses/:id/students/import", handler.ImportStudentsToCourse)
 				lecturer.GET("/courses", handler.GetMyCourses)
 				lecturer.GET("/courses/:id", handler.GetCourseDetail)
@@ -75,6 +77,7 @@ func SetupRouter() *gin.Engine {
 				lecturer.PUT("/materials/:id", handler.UpdateMaterial)
 				lecturer.POST("/courses/:id/assignments", handler.CreateAssignment)
 				lecturer.GET("/courses/:id/assignments", handler.GetAssignments)
+				lecturer.POST("/submissions/:id/grade", handler.GradeSubmission)
 			}
 		}
 	}

@@ -780,3 +780,17 @@ func ImportStudentsToCourseFromExcel(courseID uint64, teacherID uint64, filePath
 		"errors":        errorsList,
 	}, nil
 }
+
+func GetCourseStudents(courseID uint64, teacherID uint64) ([]model.User, error) {
+	// 1. Verify Course Ownership
+	course, err := repository.GetCourseByID(courseID)
+	if err != nil {
+		return nil, errors.New("kelas tidak ditemukan")
+	}
+	if course.TeacherID != teacherID {
+		return nil, errors.New("unauthorized: anda tidak memiliki akses ke kelas ini")
+	}
+
+	// 2. Get Students
+	return repository.GetStudentsByCourseID(courseID)
+}

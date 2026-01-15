@@ -290,3 +290,9 @@ func UpdateMaterial(material *model.Material) error {
 func SaveSmartFeature(feature *model.SmartFeature) error {
 	return database.DB.Save(feature).Error
 }
+
+func GetStudentsByCourseID(courseID uint64) ([]model.User, error) {
+	var students []model.User
+	err := database.DB.Model(&model.Course{ID: courseID}).Association("Students").Find(&students)
+	return students, err
+}
