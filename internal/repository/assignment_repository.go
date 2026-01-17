@@ -57,3 +57,9 @@ func GetSubmissionByID(id uint64) (*model.Submission, error) {
 	err := database.DB.Preload("Student").First(&submission, id).Error
 	return &submission, err
 }
+
+func GetSubmissionsByAssignmentID(assignmentID uint64) ([]model.Submission, error) {
+	var submissions []model.Submission
+	err := database.DB.Where("assignment_id = ?", assignmentID).Preload("Student").Find(&submissions).Error
+	return submissions, err
+}

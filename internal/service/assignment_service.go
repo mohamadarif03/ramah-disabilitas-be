@@ -171,3 +171,24 @@ func GradeSubmission(submissionID uint64, input GradeInput, teacherID uint64) (*
 
 	return submission, nil
 }
+
+func GetAssignmentSubmissions(assignmentID uint64, teacherID uint64) ([]model.Submission, error) {
+	// 1. Get Assignment
+	assignment, err := repository.GetAssignmentByID(assignmentID)
+	if err != nil {
+		return nil, errors.New("tugas tidak ditemukan")
+	}
+
+	// 2. Get Course to verify ownership
+	course, err := repository.GetCourseByID(assignment.CourseID)
+	if err != nil {
+		return nil, errors.New("kelas tidak ditemukan")
+	}
+
+	if course.TeacherID != teacherID {
+		return nil, errors.New("unauthorized: anda tidak memiliki akses ke kelas ini")
+	}
+
+	// 3. Get Submissions
+	return repository.GetSubmissionsByAssignmentID(assignmentID)
+}

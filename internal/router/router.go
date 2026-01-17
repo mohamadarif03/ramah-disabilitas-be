@@ -78,6 +78,7 @@ func SetupRouter() *gin.Engine {
 				lecturer.POST("/courses/:id/assignments", handler.CreateAssignment)
 				lecturer.GET("/courses/:id/assignments", handler.GetAssignments)
 				lecturer.POST("/submissions/:id/grade", handler.GradeSubmission)
+				lecturer.GET("/assignments/:id/submissions", handler.GetAssignmentSubmissions)
 			}
 		}
 	}
