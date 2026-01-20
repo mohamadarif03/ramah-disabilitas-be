@@ -268,3 +268,62 @@ func SubmitAssignment(assignmentID uint64, input SubmissionInput, studentID uint
 
 	return submission, nil
 }
+
+func UpdateAssignment(assignmentID uint64, input AssignmentInput, teacherID uint64) (*model.Assignment, error) {
+	assignment, err := repository.GetAssignmentByID(assignmentID)
+	if err != nil {
+		return nil, errors.New("tugas tidak ditemukan")
+	}
+
+	course, err := repository.GetCourseByID(assignment.CourseID)
+	if err != nil {
+		return nil, errors.New("kelas tidak ditemukan")
+	}
+
+	if course.TeacherID != teacherID {
+		return nil, errors.New("unauthorized: anda tidak memiliki akses ke kelas ini")
+	}
+
+	if input.ModuleID != nil {
+		module, err := repository.GetModuleByID(*input.ModuleID)
+		if err != nil {
+			return nil, errors.New("modul tidak ditemukan")
+		}
+		if module.CourseID != course.ID {
+			return nil, errors.New("modul tidak valid untuk kelas ini")
+		}
+		assignment.ModuleID = input.ModuleID
+	}
+
+	assignment.Title = input.Title
+	assignment.Instruction = input.Instruction
+	assignment.MaxPoints = input.MaxPoints
+	assignment.Deadline = input.Deadline
+	assignment.AllowFile = input.AllowFile
+	assignment.AllowText = input.AllowText
+	assignment.AllowLate = input.AllowLate
+
+	if err := repository.UpdateAssignment(assignment); err != nil {
+		return nil, err
+	}
+
+	return assignment, nil
+}
+
+func DeleteAssignment(assignmentID uint64, teacherID uint64) error {
+	assignment, err := repository.GetAssignmentByID(assignmentID)
+	if err != nil {
+		return errors.New("tugas tidak ditemukan")
+	}
+
+	course, err := repository.GetCourseByID(assignment.CourseID)
+	if err != nil {
+		return errors.New("kelas tidak ditemukan")
+	}
+
+	if course.TeacherID != teacherID {
+		return errors.New("unauthorized: anda tidak memiliki akses ke kelas ini")
+	}
+
+	return repository.DeleteAssignment(assignmentID)
+}

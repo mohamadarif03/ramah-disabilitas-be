@@ -246,3 +246,74 @@ func SubmitAssignment(c *gin.Context) {
 		"data":    submission,
 	})
 }
+
+func UpdateAssignment(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	assignmentIDStr := c.Param("id")
+	assignmentID, err := strconv.ParseUint(assignmentIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tugas tidak valid"})
+		return
+	}
+
+	var input service.AssignmentInput
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Validasi input gagal: " + err.Error()})
+		return
+	}
+
+	assignment, err := service.UpdateAssignment(assignmentID, input, userID.(uint64))
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "unauthorized") {
+			status = http.StatusForbidden
+		} else if strings.Contains(err.Error(), "tidak ditemukan") {
+			status = http.StatusNotFound
+		} else if strings.Contains(err.Error(), "modul tidak valid") {
+			status = http.StatusBadRequest
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Tugas berhasil diperbarui",
+		"data":    assignment,
+	})
+}
+
+func DeleteAssignment(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	assignmentIDStr := c.Param("id")
+	assignmentID, err := strconv.ParseUint(assignmentIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tugas tidak valid"})
+		return
+	}
+
+	err = service.DeleteAssignment(assignmentID, userID.(uint64))
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "unauthorized") {
+			status = http.StatusForbidden
+		} else if strings.Contains(err.Error(), "tidak ditemukan") {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Tugas berhasil dihapus",
+	})
+}

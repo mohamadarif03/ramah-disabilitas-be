@@ -84,6 +84,8 @@ func SetupRouter() *gin.Engine {
 				lecturer.PUT("/materials/:id", handler.UpdateMaterial)
 				lecturer.POST("/courses/:id/assignments", handler.CreateAssignment)
 				lecturer.GET("/courses/:id/assignments", handler.GetAssignments)
+				lecturer.PUT("/assignments/:id", handler.UpdateAssignment)
+				lecturer.DELETE("/assignments/:id", handler.DeleteAssignment)
 				lecturer.POST("/submissions/:id/grade", handler.GradeSubmission)
 				lecturer.GET("/assignments/:id/submissions", handler.GetAssignmentSubmissions)
 			}

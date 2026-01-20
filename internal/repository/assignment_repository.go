@@ -67,3 +67,11 @@ func GetSubmissionsByAssignmentID(assignmentID uint64) ([]model.Submission, erro
 	err := database.DB.Where("assignment_id = ?", assignmentID).Preload("Student").Find(&submissions).Error
 	return submissions, err
 }
+
+func UpdateAssignment(assignment *model.Assignment) error {
+	return database.DB.Save(assignment).Error
+}
+
+func DeleteAssignment(id uint64) error {
+	return database.DB.Delete(&model.Assignment{}, id).Error
+}
