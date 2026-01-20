@@ -50,6 +50,7 @@ func SetupRouter() *gin.Engine {
 			protected.GET("/courses/:id/members", handler.GetCourseMembers)
 			protected.GET("/courses/:id/assignments", handler.GetStudentCourseAssignments)
 			protected.GET("/assignments/:id", handler.GetAssignmentDetail)
+			protected.POST("/assignments/:id/submit", handler.SubmitAssignment)
 			protected.GET("/materials/:id", handler.GetMaterialDetail)
 			protected.POST("/materials/:id/complete", handler.ToggleMaterialCompletion)
 			protected.POST("/materials/:id/summary", handler.GenerateMaterialSummary)

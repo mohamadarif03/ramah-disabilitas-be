@@ -63,6 +63,7 @@ func Migrate() {
 			&model.Friendship{},
 			&model.Subtest{},
 			&model.AccessibilityProfile{},
+			&model.Activity{},
 		)
 		if err != nil {
 			log.Fatal("Failed to migrate Step 1 (Users):", err)

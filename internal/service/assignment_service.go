@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"ramah-disabilitas-be/internal/model"
 	"ramah-disabilitas-be/internal/repository"
 	"time"
@@ -191,4 +192,79 @@ func GetAssignmentSubmissions(assignmentID uint64, teacherID uint64) ([]model.Su
 
 	// 3. Get Submissions
 	return repository.GetSubmissionsByAssignmentID(assignmentID)
+}
+
+type SubmissionInput struct {
+	Text   string `json:"text" form:"text"`
+	File   string `json:"file" form:"file"`
+	Remark string `json:"remark" form:"remark"`
+}
+
+func SubmitAssignment(assignmentID uint64, input SubmissionInput, studentID uint64) (*model.Submission, error) {
+	// 1. Get Assignment
+	assignment, err := repository.GetAssignmentByID(assignmentID)
+	if err != nil {
+		return nil, errors.New("tugas tidak ditemukan")
+	}
+
+	// 2. Verify Student Enrollment
+	inCourse, err := repository.IsStudentInCourse(assignment.CourseID, studentID)
+	if err != nil {
+		return nil, err
+	}
+	if !inCourse {
+		return nil, errors.New("unauthorized: anda belum bergabung di kelas ini")
+	}
+
+	// 3. Check Deadline
+	if !assignment.AllowLate && time.Now().After(assignment.Deadline) {
+		return nil, errors.New("batas waktu pengumpulan telah lewat")
+	}
+
+	// 4. Create Submission Object
+	submission := &model.Submission{
+		AssignmentID: assignmentID,
+		StudentID:    studentID,
+		TextAnswer:   input.Text,
+		FileURL:      input.File,
+		SubmittedAt:  time.Now(),
+	}
+
+	// Check existing
+	existing, _ := repository.GetSubmissionByStudent(assignmentID, studentID)
+	if existing != nil && existing.ID != 0 {
+		submission.ID = existing.ID
+		// Since model.Submission doesn't have CreatedAt field explicitly defined in Go struct (shown in view_file Step 57),
+		// we don't copy it. GORM handles DB columns.
+
+		submission.Grade = existing.Grade
+		submission.Feedback = existing.Feedback
+
+		if err := repository.UpdateSubmission(submission); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := repository.CreateSubmission(submission); err != nil {
+			return nil, err
+		}
+	}
+
+	// 5. Record Activity
+	user, _ := repository.FindUserByID(studentID)
+	userName := "Mahasiswa"
+	if user != nil {
+		userName = user.Name
+	}
+
+	activity := &model.Activity{
+		UserID:      studentID,
+		CourseID:    assignment.CourseID,
+		Type:        model.ActivityTypeAssignment,
+		Title:       "Mengumpulkan Tugas",
+		Description: fmt.Sprintf("%s mengumpulkan tugas: %s", userName, assignment.Title),
+		RelatedID:   assignmentID,
+	}
+	repository.CreateActivity(activity)
+
+	return submission, nil
 }

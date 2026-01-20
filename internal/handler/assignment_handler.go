@@ -206,3 +206,43 @@ func GetAssignmentSubmissions(c *gin.Context) {
 		"data":    submissions,
 	})
 }
+
+func SubmitAssignment(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	assignmentIDStr := c.Param("id")
+	assignmentID, err := strconv.ParseUint(assignmentIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tugas tidak valid"})
+		return
+	}
+
+	var input service.SubmissionInput
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Validasi input gagal: " + err.Error()})
+		return
+	}
+
+	submission, err := service.SubmitAssignment(assignmentID, input, userID.(uint64))
+	if err != nil {
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "unauthorized") {
+			status = http.StatusForbidden
+		} else if strings.Contains(err.Error(), "tidak ditemukan") {
+			status = http.StatusNotFound
+		} else if strings.Contains(err.Error(), "batas waktu") {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Tugas berhasil dikumpulkan",
+		"data":    submission,
+	})
+}

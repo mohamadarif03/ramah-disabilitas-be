@@ -83,18 +83,28 @@ type ActivityResponse struct {
 }
 
 func GetRecentActivities(teacherID uint64, limit int) ([]ActivityResponse, error) {
-	activities, err := repository.GetRecentActivitiesByTeacherID(teacherID, limit)
+	activities, err := repository.GetActivitiesByTeacherID(teacherID, limit)
 	if err != nil {
 		return nil, err
 	}
 
 	var response []ActivityResponse
 	for _, a := range activities {
+		title := a.Title
+		// If title is empty, generate it based on type (fallback)
+		if title == "" {
+			if a.Type == "ASSIGNMENT_SUBMISSION" {
+				title = "Pengumpulan Tugas"
+			} else if a.Type == "MATERIAL_COMPLETION" {
+				title = "Penyelesaian Materi"
+			}
+		}
+
 		response = append(response, ActivityResponse{
 			ID:          "act_" + strconv.FormatUint(a.ID, 10),
-			Type:        a.Type,
-			Title:       a.Title,
-			Description: a.Description,
+			Type:        string(a.Type),
+			Title:       title,
+			Description: a.Description, // keeping original description if present, or we can construct it: fmt.Sprintf("%s %s", studentName, title)
 			CourseID:    "cls_" + strconv.FormatUint(a.CourseID, 10),
 			CreatedAt:   a.CreatedAt,
 		})

@@ -10,6 +10,10 @@ func CreateAssignment(assignment *model.Assignment) error {
 	return database.DB.Create(assignment).Error
 }
 
+func CreateSubmission(submission *model.Submission) error {
+	return database.DB.Create(submission).Error
+}
+
 func GetAssignmentsByCourseID(courseID uint64) ([]model.Assignment, error) {
 	var assignments []model.Assignment
 	err := database.DB.Where("course_id = ?", courseID).Find(&assignments).Error

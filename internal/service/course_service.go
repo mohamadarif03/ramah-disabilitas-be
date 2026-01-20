@@ -338,7 +338,38 @@ func UpdateMaterial(materialID uint64, input MaterialInput, teacherID uint64) (*
 }
 
 func ToggleMaterialCompletion(userID, materialID uint64) (bool, error) {
-	return repository.ToggleMaterialCompletion(userID, materialID)
+	completed, err := repository.ToggleMaterialCompletion(userID, materialID)
+	if err != nil {
+		return false, err
+	}
+
+	// If marked as completed (true), record activity
+	if completed {
+		material, err := repository.GetMaterialByID(materialID)
+		if err == nil {
+			// Find courseID via Module
+			module, err := repository.GetModuleByID(material.ModuleID)
+			if err == nil {
+				user, _ := repository.FindUserByID(userID)
+				userName := "Mahasiswa"
+				if user != nil {
+					userName = user.Name
+				}
+
+				activity := &model.Activity{
+					UserID:      userID,
+					CourseID:    module.CourseID,
+					Type:        model.ActivityTypeMaterial,
+					Title:       "Menyelesaikan Materi",
+					Description: fmt.Sprintf("%s menyelesaikan materi: %s", userName, material.Title),
+					RelatedID:   materialID,
+				}
+				repository.CreateActivity(activity)
+			}
+		}
+	}
+
+	return completed, nil
 }
 
 func GetStudentCourseDetail(courseID, studentID uint64) (*model.Course, error) {
