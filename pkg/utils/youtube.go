@@ -23,6 +23,7 @@ func ExtractVideoID(url string) string {
 }
 
 // GetYoutubeTranscript mengambil transkrip/caption dari video Youtube
+// GetYoutubeTranscript mengambil transkrip/caption dari video Youtube
 func GetYoutubeTranscript(videoID string) (string, error) {
 	if videoID == "" {
 		return "", errors.New("video ID kosong")
@@ -51,6 +52,11 @@ func GetYoutubeTranscript(videoID string) (string, error) {
 	jsonStr := matches[1]
 
 	var playerResponse struct {
+		VideoDetails struct {
+			Title            string `json:"title"`
+			ShortDescription string `json:"shortDescription"`
+			Author           string `json:"author"`
+		} `json:"videoDetails"`
 		Captions struct {
 			PlayerCaptionsTracklistRenderer struct {
 				CaptionTracks []struct {
@@ -69,8 +75,22 @@ func GetYoutubeTranscript(videoID string) (string, error) {
 	}
 
 	tracks := playerResponse.Captions.PlayerCaptionsTracklistRenderer.CaptionTracks
+
+	// *** FALLBACK LOGIC ***
 	if len(tracks) == 0 {
-		return "", errors.New("video ini tidak memiliki caption/transkrip otomatis")
+		// Jika tidak ada caption, kembalikan Deskripsi Video sebagai fallback
+		desc := playerResponse.VideoDetails.ShortDescription
+		title := playerResponse.VideoDetails.Title
+		if desc == "" && title == "" {
+			return "", errors.New("video ini tidak memiliki caption/transkrip otomatis dan tidak ada deskripsi yang tersedia")
+		}
+
+		// Berikan format khusus agar AI tahu ini bukan transkrip
+		fallbackContent := "[PERHATIAN: Transkrip video tidak tersedia. Berikut adalah META DATA (Judul & Deskripsi) dari video tersebut. Gunakan informasi ini sebaik mungkin untuk menjawab.]\n\n" +
+			"JUDUL: " + title + "\n\n" +
+			"DESKRIPSI:\n" + desc
+
+		return fallbackContent, nil
 	}
 
 	// 3. Select Track (Prioritas: Indonesia -> Inggris -> Lainnya)
