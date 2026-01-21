@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Overload(); err != nil {
 		log.Println("Warning: No .env file found")
 	}
 

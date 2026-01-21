@@ -36,26 +36,26 @@ func Connect() {
 
 func Migrate() {
 	if os.Getenv("APP_ENV") != "production" {
-		DB.Migrator().DropTable("course_students") // Added this line
-		DB.Migrator().DropTable(
-			&model.Activity{},
-			&model.Submission{},
-			&model.MaterialCompletion{},
-			&model.QuestionReport{},
-			&model.MatchDetail{},
-			&model.Match{},
-			&model.PracticeSession{},
-			&model.SmartFeature{},
-			&model.Question{},
-			&model.Assignment{},
-			&model.Material{},
-			&model.Module{},
-			&model.Course{},
-			&model.Friendship{},
-			&model.AccessibilityProfile{},
-			&model.Subtest{},
-			&model.User{},
-		)
+		// DB.Migrator().DropTable("course_students") // Added this line
+		// DB.Migrator().DropTable(
+		// 	&model.Activity{},
+		// 	&model.Submission{},
+		// 	&model.MaterialCompletion{},
+		// 	&model.QuestionReport{},
+		// 	&model.MatchDetail{},
+		// 	&model.Match{},
+		// 	&model.PracticeSession{},
+		// 	&model.SmartFeature{},
+		// 	&model.Question{},
+		// 	&model.Assignment{},
+		// 	&model.Material{},
+		// 	&model.Module{},
+		// 	&model.Course{},
+		// 	&model.Friendship{},
+		// 	&model.AccessibilityProfile{},
+		// 	&model.Subtest{},
+		// 	&model.User{},
+		// )
 
 		log.Println("Running AutoMigrate...")
 
