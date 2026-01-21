@@ -24,6 +24,29 @@ func GetActivitiesByTeacherID(teacherID uint64, limit int) ([]model.Activity, er
 	return activities, err
 }
 
+func GetActivitiesByTeacherIDWithPagination(teacherID uint64, limit int, offset int) ([]model.Activity, int64, error) {
+	var activities []model.Activity
+	var total int64
+
+	query := database.DB.Model(&model.Activity{}).
+		Joins("JOIN courses ON courses.id = activities.course_id").
+		Where("courses.teacher_id = ?", teacherID)
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := query.
+		Preload("User").
+		Preload("Course").
+		Order("activities.created_at desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&activities).Error
+
+	return activities, total, err
+}
+
 func GetActivitiesByCourseID(courseID uint64, limit int) ([]model.Activity, error) {
 	var activities []model.Activity
 
