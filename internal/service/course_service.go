@@ -586,6 +586,16 @@ func getMaterialContent(material *model.Material) (string, error) {
 		return extracted, nil
 	} else if material.Type == model.TypeText {
 		return material.RawContent, nil
+	} else if material.Type == model.TypeYoutube {
+		videoID := utils.ExtractVideoID(material.SourceURL)
+		if videoID == "" {
+			return "", errors.New("URL Youtube tidak valid")
+		}
+		transcript, err := utils.GetYoutubeTranscript(videoID)
+		if err != nil {
+			return "", errors.New("gagal mengambil transkrip Youtube: " + err.Error())
+		}
+		return transcript, nil
 	}
 	return "", errors.New("tipe materi ini belum didukung untuk fitur AI")
 }
