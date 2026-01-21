@@ -293,6 +293,10 @@ func SaveSmartFeature(feature *model.SmartFeature) error {
 
 func GetStudentsByCourseID(courseID uint64) ([]model.User, error) {
 	var students []model.User
-	err := database.DB.Model(&model.Course{ID: courseID}).Association("Students").Find(&students)
+	err := database.DB.Model(&model.User{}).
+		Joins("JOIN course_students ON users.id = course_students.user_id").
+		Where("course_students.course_id = ?", courseID).
+		Preload("Accessibility").
+		Find(&students).Error
 	return students, err
 }
